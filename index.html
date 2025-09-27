@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8">
+  <title>CO3: CONTRASTING CONCEPTS COMPOSE BETTER</title>
+
+  <script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  },
+  svg: {
+    fontCache: 'global'
+  }
+};
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      color: #222;
+    }
+
+    /* Top Banner */
+    .banner {
+      background-color: #007acc;
+      color: white;
+      padding: 40px 20px 20px 20px;
+    }
+    .banner h1 {
+      margin: 0;
+      font-size: 2.2em;
+    }
+    .subtitle {
+      font-style: italic;
+      color: #e0e0e0;
+      margin-top: 0.5em;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: #f4f4f4;
+      border-bottom: 1px solid #ddd;
+      padding: 10px 0;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      font-size: 1em;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .navbar a {
+      text-decoration: none;
+      color: #333;
+      font-weight: bold;
+    }
+    .navbar a:hover {
+      color: #007acc;
+    }
+
+    /* Section spacing */
+    section {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    /* Abstract box */
+    .abstract {
+      background: #f9f9f9;
+      padding: 1em;
+      border-left: 4px solid #444;
+      white-space: pre-line;
+      text-align: left;
+      display: inline-block;
+      max-width: 1200px;
+    }
+
+    /* Figures */
+    figure {
+      margin: 2em auto;
+    }
+    figure img {
+      max-width: 100%;
+      height: auto;
+      /* border: 1px solid #ddd; */
+    }
+    figcaption {
+      font-size: 0.9em;
+      color: #555;
+      margin-top: 0.5em;
+    }
+
+    /* Algorithm Section - 3 side by side */
+    .three-figures {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+    .three-figures figure {
+      flex: 1;
+      max-width: 580px;
+    }
+
+    /* Code section */
+    .code-link a {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: #007acc;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+    .code-link a:hover {
+      background: #005fa3;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Banner -->
+  <div class="banner">
+    <h1>CO3: CONTRASTING CONCEPTS COMPOSE BETTER</h1>
+    <div class="subtitle">Under review</div>
+  </div>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <a href="#abstract">Abstract</a>
+    <a href="#hypothesis">Hypothesis</a>
+    <a href="#algorithm">Algorithm</a>
+    <a href="#results">Results</a>
+    <a href="#code">Code</a>
+  </div>
+
+  <!-- Abstract -->
+  <section id="abstract">
+    <h2>Abstract</h2>
+    <div class="abstract">
+<p>We propose an algorithm to improve multi-concept prompt fidelity in text-to-image diffusion models. We start from a common failure: prompts like “a cat and a clock” sometimes yield images where one concept is missing, faint, or colliding awkwardly with another. We hypothesize this happens when the model drifts into mixed modes that over-emphasize a single concept pattern it learned strongly during training, while the others are weakened. Instead of retraining, we introduce a corrective sampling strategy that gently suppresses regions where the joint prompt behavior overlaps too strongly with any single concept’s dominant pattern, steering generation toward “pure” joint modes where all concepts can co-exist with balanced visual presence. We further show that existing multi-concept guidance schemes can operate in unstable weight regimes that amplify imbalance; we characterize favorable regions and adapt sampling to remain within them. The approach is plug-and-play, requires no model tuning, and complements standard classifier-free guidance. Experiments on diverse multi-concept prompts show consistent gains in concept coverage, relative prominence balance, and robustness, reducing dropped or distorted concepts compared to standard baselines and prior compositional methods. Results suggest that lightweight corrective guidance can substantially mitigate brittle semantic behavior in modern diffusion systems.</p>
+    </div>
+    <figure>
+      <img src="assets/fig1_v4.png" alt="Figure 1">
+      <figcaption>Figure 1: The figure illustrates our hypothesis on mode overlap using a simple 2D toy example. (a) Two modes 
+      of the distribution $p_t(x \mid \textit{&ldquo;a cat and a dog&rdquo;})$ (in <font color="green">contour</font>) has significant overlap with the modes of 
+      the individual concept distributions $p_t(x \mid \textit{&ldquo;a cat&rdquo;})$ (in <font color="red">contour</font>) and $p_t(x \mid \textit{&ldquo;a dog&rdquo;})$ (in <font color="orange">contour</font>). 
+      (b) The proposed corrector distribution $p_t(x \mid \textit{&ldquo;a cat and a dog&rdquo;}) / (p_t(x \mid \textit{&ldquo;cat&rdquo;}) p_t(x \mid \textit{&ldquo;dog&rdquo;}))$ suppresses these overlaps, steering 
+      the generation away from problematic modes. The arrows indicate the denoising directions.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Hypothesis -->
+  <section id="hypothesis">
+    <h2>Problematic Modes and Correction Hypothesis</h2>
+     <p>
+      T2I models like Stable-Diffusion sample from the modes (or high probability regions) of the learned distribution, $p(x \mid C)$.
+      While such models can produce high resolution images in general, every so often, the results are
+      surprisingly misaligned even for very simple prompts containing few concepts, e.g., $C=\textit{&ldquo;a cat and a dog&rdquo;}$. Diagnosing exactly why this behavior emerges periodically is difficult. It is conceivable that
+      the complex training process in high dimensions, especially in conjunction with text embeddings,
+      creates some problematic modes in $p(x \mid C)$.
+    </p>
+    <p>
+      We hypothesize that problematic modes in $p(x \mid C)$ arise when they overlap with modes of individual concept distribution $p(x \mid c_i)$. Such an overlap biases the generation toward a single concept $c_i$,
+      reducing the prominence of others. For instance, across images of $c_1 = \textit{&ldquo;cat&rdquo;}$ in the training dataset,
+      a few may have an inconspicuous or partial $c_2 = \textit{&ldquo;dog&rdquo;}$ in the background. This image may still fall
+      under the mode of $p(x \mid C)$. We attribute this to training instabilities and relatively less coverage of
+      multi-concept prompts $C$, which cause the model to assign high probability even to weakly conforming images. Said differently, an image of a big cat and an inconspicuous dog can get assigned
+      high probabilities under $p(x \mid C)$, causing semantic misalignment.
+    </p>
+    <p>
+      Preventing such problematic modes warrants strict and specialized training paradigms; a difficult
+      task for such large models. However, “curing” them after their occurrence is a more viable approach.
+      Assuming our hypothesis is true, we propose a cure for problematic modes. Our intuitive idea is
+      to go away from problematic modes and move towards modes under which none of the individual
+      concepts are strong. To realize this, we propose to design a corrector that generates samples from the following distribution:
+    </p>
+
+    <figure>
+      <img src="assets/correct.png" alt="Figure 2">
+      <figcaption>Corrected Distribution.</figcaption>
+    </figure>
+
+    <p>
+      Figure 1 illustrates the intuition behind our proposal. Our corrector distribution $\tilde{p}(x \mid C)$ assigns low
+      probability to regions where $p(x \mid C)$ overlaps with individual $p(x \mid c_i)$; we deem them as degenerate
+      modes dominated by a single concept. By suppressing these overlaps, the corrector emphasizes pure
+      $p(x \mid C)$ modes where all concepts coexist without one overwhelming the others. From a probabilistic perspective, this acts as a corrective factor: while $p(x \mid C)$ may assign high probability to weakly
+      conforming images due to training noise or limited multi-concept data, dividing by the marginals removes this bias and sharpens the distribution toward genuine multi-concept samples. As a result, the
+      modes we target are more semantically aligned and less prone to concept suppression or distortion.
+    </p>
+  </section>
+
+  <!-- Algorithm Section -->
+  <section id="algorithm">
+    <h2>CO3 – Algorithm</h2>
+    <div class="three-figures">
+      <figure>
+        <img src="assets/algo_1_v2.png" alt="Algorithm 1">
+        <!-- <figcaption>Algorithm Step 1</figcaption> -->
+      </figure>
+      <figure>
+        <img src="assets/algo_2_v2.png" alt="Algorithm  2">
+        <!-- <figcaption>Algorithm Step 2</figcaption> -->
+      </figure>
+      <figure>
+        <img src="assets/algo_3_v2.png" alt="Algorithm 3">
+        <!-- <figcaption>Algorithm Step 3</figcaption> -->
+      </figure>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section id="results">
+    <h2>Results</h2>
+    <figure>
+      <img src="assets/tab_1_v2.png" alt="Figure 3">
+      <figcaption>Figure 3: Quantitative comparison of different methods on compositional generation tasks over different category of prompts. We evaluate the generated images 
+        using two metrics: BLIP-VQA and ImageReward. Top performing model is highlighted in <b>Black</b> and 2nd best in <font color="blue"><b>Blue</b></font>. Higher the score the better.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/small_prompt_image_grid_v2.png" alt="Figure 4">
+      <figcaption>Figure 4: Qualitative comparison of different methods on simpler prompts.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/complex_prompt_image_grid.png" alt="Figure 5">
+      <figcaption>Figure 5: Qualitative comparison of CO3 with competing methods on complex prompts.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/sdxl_prompt_image_grid_v3.png" alt="Figure 5">
+      <figcaption>Figure 6: Additional qualitative comparison of SDXL, and SDXL+CO3 on simple prompts.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/pixart_small_prompt_image_grid_v7.png" alt="Figure 6">
+      <figcaption>Figure 7: <it>Model Agnostic behavior</it>: Qualitative comparison of generation from PixART-$\Sigma$ base
+diffusion model, PixART-$\Sigma$ + CO3, and PixART-$\Sigma$ + Composable Diffusion.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Code -->
+  <section id="code">
+    <h2>Code</h2>
+    <div class="code-link">
+      <a href="https://github.com/anomxyz26/co3-anom" target="_blank">View Code</a>
+    </div>
+  </section>
+
+</body>
+</html>
